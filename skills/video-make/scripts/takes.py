@@ -25,8 +25,10 @@ jobs = [(key, v, k) for key, texts in spec.items() for v in range(len(texts)) fo
 def job(x):
     key, v, k = x
     raw = out / f"{key}-{v}-{k}.raw.wav"
-    if not raw.exists():
+    text = out / f"{key}-{v}-{k}.txt"
+    if not raw.exists() or not text.exists() or text.read_text() != spec[key][v]:
         tts.synth(spec[key][v], raw)
+        text.write_text(spec[key][v])
     fast = out / f"{key}-{v}-{k}.wav"
     subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", str(raw), "-filter:a", f"atempo={args.rate}", str(fast)], check=True)
 

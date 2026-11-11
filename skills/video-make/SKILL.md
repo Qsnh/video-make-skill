@@ -46,11 +46,12 @@ description: Use when making a narrated explainer, tutorial or product promo vid
 | 命令 | 作用 |
 |------|------|
 | `python3 audio/make_script.py` | 生成 `audio/script.json` 和 `audio/lines.json` |
-| `python3 tools/tts.py audio/lines.json audio/raw` | 逐句配音，已存在的跳过 |
+| `python3 tools/tts.py audio/lines.json audio/raw` | 逐句配音；按文本复用已有音频，改稿后直接重跑 |
 | `bash tools/speed.sh audio/raw audio/clips 1.3` | 变速不变调 |
 | `python3 tools/asr.py audio/clips --en` | 逐句识别：plain / 术语提示 / 英文模式 |
 | `python3 tools/takes.py 3,7 3` | 第 3、7 句各录 3 条并打分 |
 | `python3 tools/takes.py audio/var.json 2` | 同一句的几种改写各录 2 条 |
+| `python3 tools/tts.py audio/lines.json audio/raw --adopt 3 audio/takes/03-0-1.raw.wav` | 采用某条 take |
 | `python3 tools/build_audio.py audio/clips build audio/script.json` | 拼接配音，生成时间轴 |
 | `python3 tools/align_chunks.py audio/clips build/timeline.json audio/script.json` | 字幕段对齐到实际读音 |
 | `node tools/render.mjs --timeline=build/timeline.json --stills=2,8.5,20` | 抽帧到 `build/stills`（每次先清空） |
@@ -59,7 +60,7 @@ description: Use when making a narrated explainer, tutorial or product promo vid
 | `node tools/render.mjs --html=comp/cover-4x3.html --width=1440 --height=1080 --png=dist/cover-bili.png` | 出封面 |
 | `python3 tools/bili_kw.py "nginx 配置ssl证书" "宝塔 https"` | 选题：B站关键词前 6 条播放量 |
 
-依赖：ffmpeg、Node 18+、本机 Google Chrome、Python 3 + `requests` + `openai-whisper`（`small` 模型）。TTS 用小米 MiMo，Key 从环境变量 `MIMO_API_KEY` 或 `MIMO_ENV_FILE` 指向的文件读取；换别家 TTS 只要保证每句一个 WAV。
+依赖：ffmpeg、Node 18+、本机 Google Chrome、Python 3 + `requests` + `openai-whisper`（`small` 模型）。TTS 用小米 MiMo，Key 从环境变量 `MIMO_API_KEY` 或 `MIMO_ENV_FILE` 指向的文件读取，都没有就问用户要；换别家 TTS 只要保证每句一个 WAV。
 
 ## 最容易出错的地方
 

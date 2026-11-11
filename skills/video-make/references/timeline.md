@@ -47,12 +47,13 @@ python3 tools/align_chunks.py audio/clips build/timeline.json audio/script.json
 
 | 改了什么 | 重跑 |
 |----------|------|
-| 某句重录（文本不变） | 把选中的 take 复制成 `raw/NN.wav` → `speed.sh` → `build_audio.py` → `align_chunks.py` → 抽帧 |
-| 改了某句的 TTS 文本 | 改 `make_script.py` 并运行 → 删 `audio/raw/NN.wav`（`tts.py` 会跳过已存在的文件）→ `tts.py` → `speed.sh` → `asr.py --only NN` → `build_audio.py` → `align_chunks.py` |
+| 某句重录（文本不变） | `tts.py --adopt NN <take.raw.wav>` → `speed.sh` → `build_audio.py` → `align_chunks.py` → 抽帧 |
+| 改了 TTS 文本、增删句子、调整句子顺序 | 改 `make_script.py`（增删句子时同步改 `CHAPTERS` 的起始句号）并运行 → `tts.py` → `speed.sh` → `asr.py --only <新合成的句号>` → `build_audio.py` → `align_chunks.py` → 调整页面里受影响的 `T(i, j)`、`E(i)` 句号 → 抽帧 |
 | 只改字幕文字（读法不变） | 改 `make_script.py` 并运行 → `build_audio.py` → `align_chunks.py` |
 | 改章节划分 | 改 `CHAPTERS` 并运行 `make_script.py` → `build_audio.py` → `align_chunks.py`；页面里场景数（`SCENES`）要和章节数一致 |
-| 增删句子 | 音频按句号存放，插入点之后的编号全部错位：把 `raw/` 里插入点之后的文件按新编号改名（从后往前改），删掉 `clips/` 重新 `speed.sh`，新句子 `tts.py` 补录；页面里所有 `T(i, j)`、`E(i)` 的句号同步调整 |
 | 改倍速 | 清空 `clips/` → `speed.sh` → `asr.py` → `build_audio.py` → `align_chunks.py` |
 | 只改画面 | 直接抽帧/渲染 |
+
+`tts.py` 在 `audio/raw/manifest.json` 里记录每个 `NN.wav` 对应的文本，所以改稿后直接重跑就行：文本没变的句子按文本找回已有音频（编号变了会自动挪过去），只合成新句子和改过的句子；不再用到的音频移到 `audio/raw/old/`，不会删除。`speed.sh` 会重做内容变了的 clip，并删掉已经没有对应原始音频的 clip。不要手动给 `raw/` 里的文件改名或覆盖，用 `--adopt`。
 
 变速或重录后，所有按固定间隔错开的动画（如 `T(4, 0) + i * 0.45`）要对照新的字幕段长度复查，段变短后动画可能跑到下一段去。

@@ -27,4 +27,5 @@ for i, (tts, chunks) in enumerate(L):
 here = pathlib.Path(__file__).parent
 (here / "script.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
 (here / "lines.json").write_text(json.dumps([x["tts"] for x in out], ensure_ascii=False, indent=1))
-print(len(out), "lines", sum(len(x["tts"]) for x in out), "chars", len(CHAPTERS), "chapters")
+caption_chars = sum(len("".join((c if isinstance(c, str) else c[0]).split())) for x in out for c in x["chunks"])
+print(f"{len(out)} lines, {caption_chars} caption chars, {len(CHAPTERS)} chapters")

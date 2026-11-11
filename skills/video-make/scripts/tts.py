@@ -1,4 +1,4 @@
-import base64, json, os, pathlib, sys, time
+import argparse, base64, json, os, pathlib, shutil, time
 import requests
 from concurrent.futures import ThreadPoolExecutor
 
@@ -74,20 +74,80 @@ def synth(text, out, voice=None, direction_text=None, tries=4):
             time.sleep(3 * (k + 1))
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        raise SystemExit("usage: tts.py audio/lines.json audio/raw [indexes]")
-    lines = json.loads(pathlib.Path(sys.argv[1]).read_text())
-    outdir = pathlib.Path(sys.argv[2])
+def load_manifest(outdir, lines):
+    path = outdir / "manifest.json"
+    if path.exists():
+        return json.loads(path.read_text())
+    return {f.stem: lines[int(f.stem)] for f in outdir.glob("*.wav") if f.stem.isdigit() and int(f.stem) < len(lines)}
+
+
+def sync(lines, outdir, only=None):
     outdir.mkdir(parents=True, exist_ok=True)
-    only = [int(x) for x in sys.argv[3].split(",")] if len(sys.argv) > 3 else range(len(lines))
+    manifest = load_manifest(outdir, lines)
+    stash = outdir / "old"
+    stash.mkdir(exist_ok=True)
+    by_text = {}
+    for name, text in manifest.items():
+        f = outdir / f"{name}.wav"
+        if f.exists():
+            kept = stash / f"{name}.wav"
+            shutil.move(str(f), kept)
+            by_text.setdefault(text, kept)
+    new_manifest, todo, reused = {}, [], []
+    for i, text in enumerate(lines):
+        name = f"{i:02d}"
+        target = outdir / f"{name}.wav"
+        if text in by_text:
+            if manifest.get(name) == text:
+                shutil.copy2(by_text[text], target)
+            else:
+                shutil.copyfile(by_text[text], target)
+                reused.append(i)
+            new_manifest[name] = text
+        elif only is None or i in only:
+            todo.append(i)
+    used = {by_text[t] for t in lines if t in by_text}
+    for f in stash.glob("*.wav"):
+        if f in used:
+            f.unlink()
+    if not any(stash.iterdir()):
+        stash.rmdir()
 
     def job(i):
-        target = outdir / f"{i:02d}.wav"
-        if target.exists():
-            return
-        synth(lines[i], target)
-        print(i, "ok", flush=True)
+        synth(lines[i], outdir / f"{i:02d}.wav")
+        print(i, "synthesized", flush=True)
 
-    with ThreadPoolExecutor(4) as ex:
-        list(ex.map(job, only))
+    try:
+        with ThreadPoolExecutor(4) as ex:
+            for i in ex.map(lambda i: (job(i), i)[1], todo):
+                new_manifest[f"{i:02d}"] = lines[i]
+    finally:
+        (outdir / "manifest.json").write_text(json.dumps(dict(sorted(new_manifest.items())), ensure_ascii=False, indent=1))
+    if reused:
+        print("moved to new index:", reused)
+    missing = [i for i in range(len(lines)) if f"{i:02d}" not in new_manifest]
+    if missing:
+        print("not synthesized:", missing)
+
+
+def adopt(lines, outdir, index, take):
+    manifest = load_manifest(outdir, lines)
+    shutil.copyfile(take, outdir / f"{index:02d}.wav")
+    manifest[f"{index:02d}"] = lines[index]
+    (outdir / "manifest.json").write_text(json.dumps(dict(sorted(manifest.items())), ensure_ascii=False, indent=1))
+    print(f"{index:02d} <- {take}")
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("lines", help="audio/lines.json")
+    ap.add_argument("outdir", help="audio/raw")
+    ap.add_argument("--only", help="comma separated indexes to synthesize; others are only re-linked")
+    ap.add_argument("--adopt", nargs=2, metavar=("INDEX", "TAKE_WAV"), help="use a take as line INDEX (run make_script.py first if the text changed)")
+    args = ap.parse_args()
+    lines = json.loads(pathlib.Path(args.lines).read_text())
+    outdir = pathlib.Path(args.outdir)
+    if args.adopt:
+        adopt(lines, outdir, int(args.adopt[0]), args.adopt[1])
+    else:
+        sync(lines, outdir, {int(x) for x in args.only.split(",")} if args.only else None)

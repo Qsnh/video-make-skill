@@ -13,7 +13,7 @@ node tools/render.mjs --timeline=build/timeline.json --png=build/f.png --at=12.3
 bash tools/contact.sh build/stills build/sheets
 ```
 
-第一条把每个时间点存成 `build/stills/t0002.00.png` 这样的文件，第二条只出一帧，第三条把抽帧按 4 张一组拼成 `build/sheets/sheetNN.png`。
+第一条把每个时间点存成 `build/stills/t0002.00.png` 这样的文件（先删掉目录里旧的 `t*.png`），第二条只出一帧，第三条把抽帧按 4 张一组拼成 `build/sheets/sheetNN.png`（先删旧的 sheet）。
 
 整片渲染前一定先抽帧看一遍，比渲完再返工快得多。
 

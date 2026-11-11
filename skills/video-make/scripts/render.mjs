@@ -1,6 +1,6 @@
 import { chromium } from "playwright-core"
 import { spawn } from "node:child_process"
-import { readFileSync, mkdirSync, existsSync, rmSync } from "node:fs"
+import { readFileSync, readdirSync, mkdirSync, existsSync, rmSync } from "node:fs"
 import { resolve, dirname, extname, join, basename } from "node:path"
 import { createServer } from "node:http"
 
@@ -36,8 +36,8 @@ await page.waitForTimeout(300)
 
 if (args.stills) {
   const outDir = resolve(args.out ?? "build/stills")
-  rmSync(outDir, { recursive: true, force: true })
   mkdirSync(outDir, { recursive: true })
+  for (const f of readdirSync(outDir)) if (/^t[\d.]+\.png$/.test(f)) rmSync(join(outDir, f))
   for (const t of args.stills.split(",").map(Number)) {
     await page.evaluate((s) => window.__seek(s), t)
     await page.screenshot({ path: `${outDir}/t${t.toFixed(2).padStart(6, "0")}.png` })

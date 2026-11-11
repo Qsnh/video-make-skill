@@ -70,8 +70,8 @@ const camT = (x, y, w, view = 1000) => { const s = view / w; return `translate($
 ```
 
 - 截图是 2 倍图（`deviceScaleFactor: 2`），在页面里按截图时的 CSS 视口宽度显示（1180px 视口截的图就设 `width: 1180px`），这样截图时记录的元素坐标可以直接用。
-- 镜头容器 `overflow: hidden`，里面的 `img` 设 `transform-origin: 0 0`；`camT(x, y, w)` 把截图里从 (x, y) 开始、宽 w 的区域放大到镜头宽度 `view`。
-- 高亮框的位置取自截图时记录的 `boxes.json`（见 capture.md），在截图坐标系里定位，跟着镜头一起变换；裁剪过的截图要先减去裁剪起点。不要目测坐标。
+- 结构是三层：镜头容器（固定尺寸，`overflow: hidden`）→ 画布层（`position: relative; transform-origin: 0 0`，动画的 `transform` 加在这一层）→ 截图 `img` 和若干高亮框（都绝对定位在画布层里）。`camT(x, y, w)` 把截图里从 (x, y) 开始、宽 w 的区域放大到镜头宽度 `view`，高亮框跟着画布层一起缩放平移。
+- 高亮框的 `left/top/width/height` 直接取截图时记录的 `*.boxes.json`（见 capture.md）；裁剪过的截图要先减去裁剪起点。不要目测坐标。
 - 连续镜头移动按上面的规则，第二段起用 `fill: "forwards"`。
 
 ## 视觉风格

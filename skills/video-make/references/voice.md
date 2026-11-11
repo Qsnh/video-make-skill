@@ -5,7 +5,8 @@
 - 接口：`POST https://api.xiaomimimo.com/v1/chat/completions`，请求头 `api-key`，模型 `mimo-v2.5-tts`。
 - 导演提示放 `user` 消息，要读的文本放 `assistant` 消息，`audio: {format: "wav", voice: "<音色>"}`。
 - `tools/tts.py` 读取：`MIMO_API_KEY`（或 `MIMO_ENV_FILE` 指向的 `KEY=VALUE` 文件）、`MIMO_VOICE`（默认 `冰糖`）、`MIMO_MODEL`；导演提示读工作目录下的 `audio/direction.txt`，没有这个文件时用脚本内置的通用提示。
-- 一句一次请求，4 并发；偶发 `SSLEOFError`/5xx/429 自动重试 4 次。已存在的 `raw/NN.wav` 会跳过。
+- 一句一次请求，4 并发；偶发 `SSLEOFError`/5xx/429 自动重试 4 次。
+- `audio/raw/manifest.json` 记录每个音频对应的文本：重跑时文本没变的句子直接复用（句号变了会自动挪过去），只合成新增和改过的句子。`--only 3,7` 只合成指定的句子。
 
 导演提示由三段组成，可以写在一行里：
 
@@ -78,9 +79,10 @@ python3 tools/asr.py audio/clips --only 3,7 --en
 | plain 把英文术语认成读法相近的拼写（`Engine X`→`NGX`） | 通过 |
 | plain 多出一截、少了字、少了最后一个音节 | 重录 |
 | plain 和 `en` 都没认出术语，只有 `prime` 认对 | 不能判通过：重录 3 条，有 plain 或 `en` 认得出的就换上；都认不出，保留 plain 分数最高的那条，交付时报出时间点请用户听 |
+| plain、`en`、`prime` 都没认出术语 | 按读错处理：重录 3 条；仍认不出就按上面的写法表改写（垫词、拆字母、换中文说法），用 `takes.py` 比较改写版本 |
 | 年份被写成别的年份（`二零二九`→`2019`） | 用同时列出两种读法的提示复查（"二零一九年，二零二九年"），能区分就通过 |
 
-`prime` 只用来排除"这个词 whisper 根本不认识"的可能，不能用来在几条 take 之间做选择：它会把读错的也纠正对，也可能把对的改错（例如把"字幕"改成"刺目"）。句尾有音乐时，whisper 会编出"字幕by…"之类的句子，忽略。
+`prime` 不能单独作为通过的依据，也不能用来在几条 take 之间做选择：它会把读错的也纠正对，也可能把对的改错（例如把"字幕"改成"刺目"）。句尾有音乐时，whisper 会编出"字幕by…"之类的句子，忽略。
 
 ## 重录
 
@@ -96,7 +98,7 @@ python3 tools/takes.py audio/var.json 2
 ```
 
 - 输出 `audio/takes/<key>-<改写序号>-<take序号>.raw.wav`（原速）和 `.wav`（已变速），打印 zh 分数和英文模式结果。
-- 原速文件按文件名缓存，存在就不再合成。数字模式的 key 就是句号（`03`）；改了某句文本后再用数字模式重录，先删掉 `audio/takes/03-*`。spec 里的 key 不要和句号重名，每次换新文本就换新 key（`12b`、`12c`）。
-- 选中后：把 `.raw.wav` 复制成 `audio/raw/NN.wav`（用 `cp`，不要保留旧时间戳）；如果用的是改写版，同步改 `make_script.py` 里该句的 TTS 文本和字幕读法并重新运行；然后 `speed.sh`（会自动重做比 raw 旧的 clip）→ `build_audio.py` → `align_chunks.py`。
+- 原速文件旁边存一个同名 `.txt` 记录文本，文本没变就复用，变了就重新合成；想要更多条就加大 take 数。数字模式的 key 就是句号（`03`），spec 里的 key 建议用 `12b` 这种和句号区分开的名字。
+- 选中后：如果用的是改写版，先改 `make_script.py` 里该句的 TTS 文本和字幕读法并运行；然后 `python3 tools/tts.py audio/lines.json audio/raw --adopt 12 audio/takes/12b-1-0.raw.wav`（复制并更新 manifest，之后重跑 `tts.py` 不会覆盖它）→ `speed.sh` → `build_audio.py` → `align_chunks.py`。
 - 15 条以上都读不好的词，放弃这个词，换说法。
 - agent 听不见声音：实在拿不准的句子，交付时报出时间点请用户听。
