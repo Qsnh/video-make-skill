@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+:root {
+  --page: linear-gradient(135deg, oklch(95.3% .012 290), oklch(96.1% .012 70));
+  --surface: oklch(100% 0 0);
+  --surface-muted: oklch(97.8% 0 0);
+  --foreground: oklch(15% 0 0);
+  --text-secondary: oklch(46% 0 0);
+  --text-muted: oklch(59% 0 0);
+  --border: oklch(93.5% 0 0);
+  --border-subtle: oklch(96.5% 0 0);
+  --border-strong: oklch(82% 0 0);
+  --accent-subtle: oklch(33% 0 0 / .08);
+  --success: oklch(49% .19 150);
+  --warning: oklch(58% .18 75);
+  --danger: oklch(54% .21 25);
+  --cap-stroke: oklch(100% 0 0);
+  --bar: oklch(100% 0 0 / .5);
+  --bar-fill: oklch(33% 0 0 / .07);
+  --font: "PingFang SC", "Helvetica Neue", sans-serif;
+  --mono: "SF Mono", Menlo, monospace;
+}
+html.dark {
+  --page: oklch(18.5% 0 0);
+  --surface: oklch(22% 0 0);
+  --surface-muted: oklch(26% 0 0);
+  --foreground: oklch(96% 0 0);
+  --text-secondary: oklch(77% 0 0);
+  --text-muted: oklch(64% 0 0);
+  --border: oklch(29% 0 0);
+  --border-subtle: oklch(25% 0 0);
+  --border-strong: oklch(40% 0 0);
+  --accent-subtle: oklch(80% 0 0 / .12);
+  --success: oklch(78% .18 150);
+  --warning: oklch(83% .17 80);
+  --danger: oklch(76% .2 25);
+  --cap-stroke: oklch(18.5% 0 0);
+  --bar: oklch(22% 0 0);
+  --bar-fill: oklch(100% 0 0 / .06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; }
+body { font-family: var(--font); color: var(--foreground); font-size: 24px; line-height: 1.4; letter-spacing: -.01em; -webkit-font-smoothing: antialiased; }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--page); }
+.scene { position: absolute; inset: 0; }
+.mono { font-family: var(--mono); letter-spacing: 0; }
+.ic { display: inline-block; width: 1em; height: 1em; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+#chapbar { position: absolute; left: 0; top: 0; width: 1920px; height: 72px; background: var(--bar); border-bottom: 1px solid var(--border); overflow: hidden; }
+#chap-fill { position: absolute; inset: 0; background: var(--bar-fill); transform-origin: left center; }
+#chap-line { position: absolute; left: 0; bottom: -1px; height: 4px; width: 1920px; background: var(--foreground); transform-origin: left center; }
+.chs { position: absolute; top: 0; height: 72px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 500; white-space: nowrap; }
+.chs + .chs { border-left: 1px solid var(--border-strong); }
+.chs .lb { position: relative; color: var(--text-muted); }
+.chs .lb .now, .chs .lb .past { position: absolute; left: 0; top: 0; opacity: 0; }
+.chs .lb .now { color: var(--foreground); }
+.chs .lb .past { color: var(--text-secondary); }
+.chs .hl { position: absolute; inset: 10px 6px; border-radius: 18px; background: var(--surface); box-shadow: 0 1px 3px oklch(0% 0 0 / .08); opacity: 0; }
+
+.ptitle { position: absolute; left: 228px; top: 140px; width: 1464px; height: 66px; display: flex; align-items: center; }
+.ptitle h1 { font-size: 54px; font-weight: 500; letter-spacing: -.03em; line-height: 1.1; white-space: nowrap; }
+.card { position: absolute; border: 1px solid var(--border); border-radius: 39px; background: var(--surface); }
+.ring { position: absolute; inset: -1px; border-radius: inherit; border: 2px solid var(--foreground); opacity: 0; pointer-events: none; }
+.badge { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 9999px; border: 1px solid var(--b-border, var(--border)); background: var(--b-bg, var(--surface)); color: var(--b-fg, var(--foreground)); font-size: 21px; font-weight: 500; white-space: nowrap; line-height: 1; }
+.b-neutral { --b-fg: var(--text-secondary); --b-bg: var(--surface-muted); }
+.b-success { --b-fg: var(--success); --b-bg: color-mix(in oklab, var(--success) 10%, var(--surface)); --b-border: color-mix(in oklab, var(--success) 25%, var(--border)); }
+.b-danger { --b-fg: var(--danger); --b-bg: color-mix(in oklab, var(--danger) 10%, var(--surface)); --b-border: color-mix(in oklab, var(--danger) 26%, var(--border)); }
+
+.tile { position: absolute; top: 48px; width: 432px; height: 504px; padding: 48px 40px; border: 1px solid var(--border); border-radius: 30px; background: var(--surface-muted); }
+.tile .n { font-family: var(--mono); font-size: 30px; color: var(--text-muted); }
+.tile .t { margin-top: 150px; font-size: 54px; font-weight: 500; letter-spacing: -.03em; }
+.tile .d { margin-top: 18px; font-size: 27px; color: var(--text-secondary); }
+
+.thead, .trow { position: relative; display: grid; grid-template-columns: 1fr 1fr; align-items: center; padding: 0 48px; }
+.thead { height: 84px; font-size: 24px; color: var(--text-muted); }
+.trow { height: 112px; border-top: 1px solid var(--border-subtle); font-size: 36px; font-weight: 500; }
+.trow .say { font-family: var(--mono); font-size: 32px; color: var(--text-secondary); }
+.trow .ring { inset: 8px 20px; border-radius: 20px; }
+
+.crow { position: relative; display: flex; align-items: center; gap: 32px; height: 120px; padding: 0 48px; border-top: 1px solid var(--border-subtle); }
+.crow:first-child { border-top: 0; }
+.crow .f { width: 110px; font-family: var(--mono); font-size: 26px; color: var(--text-muted); }
+.crow .x { flex: 1; font-size: 30px; white-space: nowrap; overflow: hidden; }
+.crow .slot { position: relative; width: 200px; height: 44px; }
+.crow .slot .badge { position: absolute; right: 0; top: 0; }
+.crow .ring { inset: 10px 20px; border-radius: 22px; }
+
+.flow { position: absolute; left: 228px; top: 300px; width: 1464px; display: flex; align-items: center; justify-content: space-between; }
+.node { width: 300px; height: 220px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; border: 1px solid var(--border); border-radius: 30px; background: var(--surface); }
+.node .k { font-family: var(--mono); font-size: 30px; font-weight: 600; }
+.node .v { font-size: 24px; color: var(--text-secondary); }
+.arrow { font-size: 40px; color: var(--text-muted); }
+#done { position: absolute; left: 228px; top: 600px; width: 1464px; display: flex; justify-content: center; gap: 24px; }
+#follow { position: absolute; left: 810px; top: 720px; width: 300px; height: 76px; display: flex; align-items: center; justify-content: center; border-radius: 27px; background: var(--foreground); color: var(--surface); font-size: 30px; font-weight: 500; }
+
+#caption { position: absolute; left: 228px; width: 1464px; top: 960px; height: 84px; display: flex; align-items: center; justify-content: center; text-align: center; }
+#cap-text { white-space: nowrap; font-size: 42px; line-height: 1.25; font-weight: 500; color: var(--foreground); -webkit-text-stroke: 8px var(--cap-stroke); paint-order: stroke fill; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="chapbar"><div id="chap-fill"></div><div id="chap-line"></div></div>
+
+  <section class="scene" id="s1">
+    <div class="ptitle"><h1>三步做一条配音视频</h1></div>
+    <div class="card" id="steps" style="left:228px;top:260px;width:1464px;height:600px">
+      <div class="tile" id="st1" style="left:48px"><div class="n">01</div><div class="t">写文案</div><div class="d">一句一行，字幕和配音分开</div><div class="ring" id="st1r"></div></div>
+      <div class="tile" id="st2" style="left:516px"><div class="n">02</div><div class="t">配音</div><div class="d">逐句 TTS，逐句识别校验</div><div class="ring" id="st2r"></div></div>
+      <div class="tile" id="st3" style="left:984px"><div class="n">03</div><div class="t">渲染</div><div class="d">网页动画逐帧截图成 MP4</div><div class="ring" id="st3r"></div></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s2">
+    <div class="ptitle"><h1>字幕和配音分开写</h1></div>
+    <div class="card" id="pair" style="left:228px;top:260px;width:1464px;height:540px">
+      <div class="thead"><span>字幕（画面）</span><span>配音文本（TTS）</span></div>
+      <div class="trow" id="pr1"><span>Nginx</span><span class="say">Engine X</span><div class="ring" id="pr1r"></div></div>
+      <div class="trow" id="pr2"><span>1.3 倍速</span><span class="say">一点三倍速</span><div class="ring" id="pr2r"></div></div>
+      <div class="trow" id="pr3"><span>HTTPS</span><span class="say">H T T P S</span></div>
+      <div class="trow" id="pr4"><span>443</span><span class="say">四四三</span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s3">
+    <div class="ptitle"><h1>逐句配音，逐句校验</h1></div>
+    <div class="card" id="clips" style="left:228px;top:260px;width:1464px;height:482px">
+      <div class="crow" id="c1"><span class="f">00.wav</span><span class="x">这条视频，从文案到成片，全程用代码做出来。</span><span class="slot"><span class="badge b-success">0.98 通过</span></span></div>
+      <div class="crow" id="c2"><span class="f">01.wav</span><span class="x">一共三步：写文案、配音、渲染。</span><span class="slot"><span class="badge b-success">1.00 通过</span></span></div>
+      <div class="crow" id="c3"><span class="f">02.wav</span><span class="x">第一步写文案，一句一行……（末尾多出乱语）</span><span class="slot"><span class="badge b-danger" id="c3bad">0.71 重录</span><span class="badge b-success" id="c3ok">0.97 通过</span></span><div class="ring" id="c3r"></div></div>
+      <div class="crow" id="c4"><span class="f">03.wav</span><span class="x">比如字幕写 Nginx 和 1.3 倍速……</span><span class="slot"><span class="badge b-success">0.95 通过</span></span></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s4">
+    <div class="ptitle"><h1>逐帧渲染</h1></div>
+    <div class="flow">
+      <div class="node" id="n1"><span class="k">index.html</span><span class="v">动画挂在时间轴上</span></div>
+      <span class="arrow" id="a1">→</span>
+      <div class="node" id="n2"><span class="k">__seek(t)</span><span class="v">每帧跳到 t 秒</span></div>
+      <span class="arrow" id="a2">→</span>
+      <div class="node" id="n3"><span class="k">PNG</span><span class="v">截图送进管道</span></div>
+      <span class="arrow" id="a3">→</span>
+      <div class="node" id="n4"><span class="k">ffmpeg</span><span class="v">编码 + 配音混流</span></div>
+    </div>
+    <div id="done"><span class="badge b-success">video.mp4</span><span class="badge b-neutral">-14 LUFS</span><span class="badge b-neutral">30 fps</span></div>
+    <div id="follow">点个关注</div>
+  </section>
+
+  <div id="caption"><div id="cap-text"></div></div>
+</div>
+<script src="icons.js"></script>
+<script>
+const TL = window.TIMELINE;
+const S = TL.sentences;
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const ENTER = "cubic-bezier(.16,1,.3,1)";
+const STANDARD = "cubic-bezier(.22,1,.36,1)";
+const EXIT = "cubic-bezier(.7,0,.84,0)";
+const T = (i, j = 0) => S[i].chunks[j].start;
+const E = (i) => S[i].end;
+const mid = (a, b) => (S[a].end + S[b].start) / 2;
+
+const CHAPTERS = S.flatMap((s, i) => (s.chapter ? [[s.chapter, i]] : []));
+const CUT = [...CHAPTERS.map(([, s], i) => (i === 0 ? 0 : mid(s - 1, s))), TL.duration];
+const SCENES = ["#s1", "#s2", "#s3", "#s4"];
+
+if (window.ICONS) $$("svg[data-i]").forEach((s) => { s.innerHTML = window.ICONS[s.dataset.i] || ""; });
+
+function anim(el, frames, at, dur, opts = {}) {
+  if (typeof el === "string") el = $(el);
+  if (!el) throw new Error("anim target missing");
+  const a = el.animate(frames, { duration: dur * 1000, delay: Math.max(0, at) * 1000, fill: opts.fill || "both", easing: opts.easing || ENTER });
+  a.pause();
+  return a;
+}
+const show = (el, at, dur = 0.45, from = "translateY(24px)") => anim(el, [{ opacity: 0, transform: from }, { opacity: 1, transform: "none" }], at, dur);
+const hide = (el, at, dur = 0.25, to = "translateY(-16px)") => anim(el, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: to }], at, dur, { fill: "forwards", easing: EXIT });
+const fadeIn = (el, at, dur = 0.3) => anim(el, [{ opacity: 0 }, { opacity: 1 }], at, dur);
+const fadeOut = (el, at, dur = 0.25) => anim(el, [{ opacity: 1 }, { opacity: 0 }], at, dur, { fill: "forwards" });
+const pop = (el, at, dur = 0.45) => anim(el, [{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1)" }], at, dur);
+const ring = (el, at, until) => { anim(el, [{ opacity: 0 }, { opacity: 1 }], at, 0.35); if (until) fadeOut(el, until, 0.3); };
+const hidden = (el) => anim(el, [{ opacity: 0 }, { opacity: 0 }], 0, 0.001, { fill: "forwards" });
+
+{
+  const bar = $("#chapbar");
+  const px = (t) => 1920 * t / TL.duration;
+  bar.insertAdjacentHTML("beforeend", CHAPTERS.map(([c], i) => `<div class="chs" style="left:${px(CUT[i])}px;width:${px(CUT[i + 1]) - px(CUT[i])}px"><div class="hl"></div><span class="lb">${c}<span class="now">${c}</span><span class="past">${c}</span></span></div>`).join(""));
+  $$("#chapbar .chs").forEach((el) => {
+    const lb = el.querySelector(".lb");
+    let size = 24;
+    while (lb.offsetWidth > el.offsetWidth - 14 && size > 16) { size -= 1; el.style.fontSize = size + "px"; }
+  });
+  anim("#chap-fill", [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 0, TL.duration, { easing: "linear" });
+  anim("#chap-line", [{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], 0, TL.duration, { easing: "linear" });
+  $$("#chapbar .chs").forEach((el, i) => {
+    const now = el.querySelector(".now"), past = el.querySelector(".past");
+    anim(now, [{ opacity: 0 }, { opacity: 1 }], Math.max(0, CUT[i] - 0.1), 0.3);
+    if (i < CHAPTERS.length - 1) {
+      anim(now, [{ opacity: 1 }, { opacity: 0 }], CUT[i + 1] - 0.1, 0.3, { fill: "forwards" });
+      anim(past, [{ opacity: 0 }, { opacity: 1 }], CUT[i + 1] - 0.1, 0.3);
+    }
+  });
+}
+const chapHl = $$("#chapbar .chs .hl");
+const flash = (i, at) => anim(chapHl[i], [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }], at, 1.1, { fill: "forwards", easing: "linear" });
+
+SCENES.forEach((id, i, arr) => {
+  if (i > 0) anim(id, [{ opacity: 0, transform: "translateY(24px)" }, { opacity: 1, transform: "none" }], CUT[i] - 0.05, 0.5);
+  if (i < arr.length - 1) anim(id, [{ opacity: 1, transform: "none" }, { opacity: 0, transform: "translateY(-16px)" }], CUT[i + 1] - 0.3, 0.25, { fill: "forwards", easing: EXIT });
+});
+SCENES.forEach((id, i) => show(`${id} .ptitle`, i === 0 ? 0 : CUT[i] + 0.05, 0.45, "translateY(12px)"));
+
+{
+  show("#steps", 0.25, 0.5);
+  ["#st1", "#st2", "#st3"].forEach((t, i) => pop(t, 0.45 + i * 0.2, 0.4));
+  ["#st1r", "#st2r", "#st3r"].forEach((r, i, arr) => {
+    const at = T(1, 1) + i * 0.45;
+    ring(r, at, i < arr.length - 1 ? at + 0.45 : undefined);
+    flash(i + 1, at);
+  });
+}
+
+{
+  show("#pair", T(2, 0) - 0.05, 0.5);
+  ["#pr1", "#pr2", "#pr3", "#pr4"].forEach((r, i) => show(r, T(2, 0) + 0.3 + i * 0.15, 0.4, "translateX(-12px)"));
+  ring("#pr1r", T(3, 0) + 0.4, T(3, 1) - 0.1);
+  ring("#pr2r", T(3, 1));
+}
+
+{
+  show("#clips", T(4, 0) - 0.05, 0.5);
+  ["#c1", "#c2", "#c3", "#c4"].forEach((r, i) => show(r, T(4, 0) + 0.2 + i * 0.2, 0.4, "translateX(-12px)"));
+  ring("#c3r", T(4, 1) + 0.3);
+  hidden("#c3ok");
+  fadeOut("#c3bad", T(4, 2) + 0.2, 0.2);
+  anim("#c3ok", [{ opacity: 0, transform: "scale(.94)" }, { opacity: 1, transform: "scale(1)" }], T(4, 2) + 0.35, 0.4, { fill: "forwards" });
+}
+
+{
+  ["#n1", "#a1", "#n2", "#a2", "#n3", "#a3", "#n4"].forEach((n, i) => show(n, T(5, 0) + i * 0.22, 0.4, "translateX(-16px)"));
+  pop("#done", T(5, 1) - 0.05, 0.45);
+  pop("#follow", T(6, 0) - 0.05, 0.45);
+}
+
+const CHUNKS = S.flatMap((s) => s.chunks);
+let lastChunk = null;
+const cap = $("#cap-text");
+function captionAt(t) {
+  let active = null;
+  for (const c of CHUNKS) if (t >= c.start - 0.04 && t < c.end + 0.02) active = c;
+  if (!active) {
+    const prev = CHUNKS.filter((c) => c.end <= t).pop();
+    if (prev && t - prev.end < 0.35 && CHUNKS.indexOf(prev) < CHUNKS.length - 1) active = prev;
+  }
+  if (active !== lastChunk) {
+    cap.textContent = active ? active.text : "";
+    lastChunk = active;
+    let size = 42;
+    cap.style.fontSize = size + "px";
+    while (cap.scrollWidth > 1440 && size > 30) { size -= 2; cap.style.fontSize = size + "px"; }
+  }
+  if (active) {
+    const p = Math.min(1, Math.max(0, (t - (active.start - 0.04)) / 0.14));
+    const e = 1 - Math.pow(1 - p, 3);
+    cap.style.opacity = String(e);
+    cap.style.transform = `translateY(${(1 - e) * 8}px)`;
+  } else {
+    cap.style.opacity = "0";
+  }
+}
+
+window.__seek = (t) => {
+  for (const a of document.getAnimations()) a.currentTime = t * 1000;
+  captionAt(t);
+};
+window.__duration = TL.duration;
+window.__seek(0);
+</script>
+</body>
+</html>

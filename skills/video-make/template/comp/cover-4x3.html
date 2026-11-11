@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+:root { --fg: oklch(15% 0 0); --muted: oklch(46% 0 0); --line: oklch(93.5% 0 0); --font: "PingFang SC", "Helvetica Neue", sans-serif; --mono: "SF Mono", Menlo, monospace; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1440px; height: 1080px; overflow: hidden; }
+body { font-family: var(--font); color: var(--fg); -webkit-font-smoothing: antialiased; letter-spacing: -.01em; }
+#c { position: relative; width: 1440px; height: 1080px; overflow: hidden; background: linear-gradient(120deg, oklch(89% .05 300), oklch(92.5% .05 65)); }
+#kicker { position: absolute; left: 96px; top: 175px; font-size: 40px; font-weight: 500; color: var(--muted); }
+#title { position: absolute; left: 90px; top: 240px; font-size: 104px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; white-space: nowrap; }
+#card { position: absolute; left: 96px; top: 410px; width: 1248px; height: 500px; background: #fff; border-radius: 52px; padding: 44px; display: flex; gap: 32px; box-shadow: 0 24px 60px oklch(30% .05 300 / .14); }
+.step { flex: 1; border: 2px solid var(--line); border-radius: 36px; padding: 44px 40px; display: flex; flex-direction: column; justify-content: space-between; }
+.step .n { font-family: var(--mono); font-size: 40px; color: var(--muted); }
+.step .t { font-size: 76px; font-weight: 600; letter-spacing: -.03em; }
+.guide #c::after { content: ""; position: absolute; left: 0; right: 0; top: 135px; height: 810px; border-top: 3px dashed red; border-bottom: 3px dashed red; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="c">
+  <div id="kicker">全程用代码完成</div>
+  <div id="title">三步做一条配音视频</div>
+  <div id="card">
+    <div class="step"><span class="n">01</span><span class="t">写文案</span></div>
+    <div class="step"><span class="n">02</span><span class="t">配音</span></div>
+    <div class="step"><span class="n">03</span><span class="t">渲染</span></div>
+  </div>
+</div>
+<script>
+if (location.search.includes("guide")) document.documentElement.classList.add("guide");
+window.__seek = () => {};
+window.__duration = 1;
+</script>
+</body>
+</html>
