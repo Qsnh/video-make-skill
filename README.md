@@ -38,7 +38,10 @@ cp -R video-make-skill/skills/video-make ~/.claude/skills/
 - ffmpeg
 - Node.js 18+，本机安装的 Google Chrome
 - Python 3，`pip install requests openai-whisper`（首次运行会下载 whisper `small` 模型）
-- 小米 MiMo TTS 的 API Key：`export MIMO_API_KEY=...`，或 `export MIMO_ENV_FILE=~/.config/mimo.env`（文件里写 `MIMO_API_KEY=...`，可选 `MIMO_VOICE`、`MIMO_MODEL`）。换别家 TTS 时只需改 `scripts/tts.py`，保证每句输出一个 WAV。
+- 一个 TTS 的 Key，二选一（都可以直接 `export`，或写进 `export TTS_ENV_FILE=~/.config/tts.env` 指向的 `KEY=VALUE` 文件）：
+  - 小米 MiMo（默认）：`MIMO_API_KEY=...`，可选 `MIMO_VOICE`、`MIMO_MODEL`。旧的 `MIMO_ENV_FILE` 仍然可用。
+  - 豆包语音合成 2.0：`TTS_PROVIDER=doubao`、`DOUBAO_API_KEY=...`（火山引擎新版控制台的 API Key），可选 `DOUBAO_VOICE`（默认 `zh_female_vv_uranus_bigtts`）、`DOUBAO_RESOURCE_ID`、`DOUBAO_CONTEXT`，详见 `references/voice.md`。
+  - 换别家 TTS 时在 `scripts/tts.py` 里加一个合成函数并登记到 `PROVIDERS`，保证每句输出一个 WAV。
 
 ## 跑一遍演示
 

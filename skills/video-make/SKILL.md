@@ -60,7 +60,7 @@ description: Use when making a narrated explainer, tutorial or product promo vid
 | `node tools/render.mjs --html=comp/cover-4x3.html --width=1440 --height=1080 --png=dist/cover-bili.png` | 出封面 |
 | `python3 tools/bili_kw.py "nginx 配置ssl证书" "宝塔 https"` | 选题：B站关键词前 6 条播放量 |
 
-依赖：ffmpeg、Node 18+、本机 Google Chrome、Python 3 + `requests` + `openai-whisper`（`small` 模型）。TTS 用小米 MiMo，Key 从环境变量 `MIMO_API_KEY` 或 `MIMO_ENV_FILE` 指向的文件读取，都没有就问用户要；换别家 TTS 只要保证每句一个 WAV。
+依赖：ffmpeg、Node 18+、本机 Google Chrome、Python 3 + `requests` + `openai-whisper`（`small` 模型）。TTS 支持小米 MiMo（默认）和豆包语音合成 2.0（`TTS_PROVIDER=doubao`），Key 分别是 `MIMO_API_KEY`、`DOUBAO_API_KEY`，从环境变量或 `TTS_ENV_FILE` 指向的文件读取，都没有就问用户要；配置见 references/voice.md。再换别家 TTS 只要在 `tts.py` 里加一个函数，保证每句一个 WAV。
 
 ## 最容易出错的地方
 

@@ -1,12 +1,32 @@
 # 配音和校验
 
+## 选择 TTS
+
+`tools/tts.py` 支持两家，用 `TTS_PROVIDER` 切换：`mimo`（小米 MiMo，默认）、`doubao`（火山引擎豆包语音合成 2.0）。所有配置项都可以写成环境变量，也可以写进 `TTS_ENV_FILE`（或旧的 `MIMO_ENV_FILE`）指向的 `KEY=VALUE` 文件，环境变量优先。
+
+通用行为：
+
+- 一句一次请求，4 并发；偶发 `SSLEOFError`/5xx/429/超并发自动重试 4 次。
+- `audio/raw/manifest.json` 记录每个音频对应的文本：重跑时文本没变的句子直接复用（句号变了会自动挪过去），只合成新增和改过的句子。`--only 3,7` 只合成指定的句子。
+- manifest 只认文本，不认服务商和音色：**换服务商或音色后要整期重配**，先把 `audio/raw`、`audio/clips` 移走再跑。
+
 ## MiMo TTS
 
 - 接口：`POST https://api.xiaomimimo.com/v1/chat/completions`，请求头 `api-key`，模型 `mimo-v2.5-tts`。
 - 导演提示放 `user` 消息，要读的文本放 `assistant` 消息，`audio: {format: "wav", voice: "<音色>"}`。
-- `tools/tts.py` 读取：`MIMO_API_KEY`（或 `MIMO_ENV_FILE` 指向的 `KEY=VALUE` 文件）、`MIMO_VOICE`（默认 `冰糖`）、`MIMO_MODEL`；导演提示读工作目录下的 `audio/direction.txt`，没有这个文件时用脚本内置的通用提示。
-- 一句一次请求，4 并发；偶发 `SSLEOFError`/5xx/429 自动重试 4 次。
-- `audio/raw/manifest.json` 记录每个音频对应的文本：重跑时文本没变的句子直接复用（句号变了会自动挪过去），只合成新增和改过的句子。`--only 3,7` 只合成指定的句子。
+- 配置：`MIMO_API_KEY`、`MIMO_VOICE`（默认 `冰糖`）、`MIMO_MODEL`；导演提示读工作目录下的 `audio/direction.txt`，没有这个文件时用脚本内置的通用提示。
+
+## 豆包语音合成 2.0
+
+- 接口：`POST https://openspeech.bytedance.com/api/v3/tts/unidirectional`（V3 HTTP 单向流式；旧的 V1 接口不支持 2.0 音色）。
+- 鉴权：新版控制台在「API Key 管理」里建一个 Key，设 `DOUBAO_API_KEY`（请求头 `X-Api-Key`）；旧版控制台设 `DOUBAO_APP_ID` + `DOUBAO_ACCESS_KEY`。
+- 配置：
+  - `DOUBAO_VOICE`：音色 ID，默认 `zh_female_vv_uranus_bigtts`。音色在控制台「音色库」或 2.0 音色列表里挑，选名字带 `uranus_bigtts` 的 2.0 音色。
+  - `DOUBAO_RESOURCE_ID`：默认 `seed-tts-2.0`（官方 2.0 音色）；复刻音色（`S_` 开头）改成 `seed-icl-2.0`。资源 ID 和音色对不上会报 `resource ID is mismatched with speaker related resource`。
+  - `DOUBAO_CONTEXT`：可选，语音指令，一句话说语气，例如 `用平实亲切的语气，像跟朋友讲事情`，放进 `additions.context_texts`，不计费。只对 2.0 官方音色生效。豆包不读 `audio/direction.txt`。
+- 请求 `mp3`（24kHz、160kbps），脚本用 ffmpeg 转成 WAV 存盘，后面的 `speed.sh`、ASR、时间轴不用改。官方不建议流式接口直接要 wav（会返回多个 wav 头）。
+- 语速用接口默认值（`speech_rate` 0），和 MiMo 一样合成后再用 `speed.sh` 统一加速。
+- 报错会带 `logid`，找火山工单时提供它。常见的：`speaker not found` 是音色 ID 写错或没开通，`speaker permission denied` 是这个音色没授权给当前账号，`quota exceeded for types: concurrency` 是超并发（脚本会重试）。
 
 导演提示由三段组成，可以写在一行里：
 
